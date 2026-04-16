@@ -1,0 +1,88 @@
+{
+  "image": "causal_data\\aircraft damage\\test\\images\\151_17_JPG_jpg.rf.f65a3771541e0009e021ed12d5dbbe78.jpg",
+  "probabilities": {
+    "crack": 0.9874234795570374,
+    "dent": 0.45054933428764343,
+    "paint_off": 7.033336441963911e-05,
+    "scratch": 7.021736223578046e-07
+  },
+  "predictions": {
+    "crack": true,
+    "dent": false,
+    "paint_off": false,
+    "scratch": false
+  },
+  "damage_severity": {
+    "count": 4,
+    "label": "Moderate \u2014 4 damage instances"
+  },
+  "causal_notes": [
+    "  DAG edge crack \u2192 paint_off: weight=1.082"
+  ],
+  "counterfactual_deltas": {
+    "crack": {
+      "crack": -0.9870427250862122,
+      "dent": -0.25715985894203186,
+      "paint_off": 0.8250928521156311,
+      "scratch": 0.8810952305793762
+    },
+    "dent": {
+      "crack": -0.00260317325592041,
+      "dent": -0.42759186029434204,
+      "paint_off": 0.0016088560223579407,
+      "scratch": 1.1223974070162512e-06
+    },
+    "paint_off": {
+      "crack": -0.0008220672607421875,
+      "dent": -0.05417478084564209,
+      "paint_off": 4.50903971795924e-05,
+      "scratch": 4.352488645054109e-07
+    },
+    "scratch": {
+      "crack": 0.00026488304138183594,
+      "dent": -0.004043161869049072,
+      "paint_off": -2.067245077341795e-06,
+      "scratch": -5.037861683376832e-08
+    }
+  },
+  "causal_indicators": [
+    {
+      "crack": {
+        "dent": "causal_downstream_confirmed",
+        "paint_off": "inverse_relationship",
+        "scratch": "inverse_relationship"
+      }
+    },
+    {
+      "dent": {
+        "crack": "no_change",
+        "paint_off": "no_change",
+        "scratch": "no_change"
+      }
+    },
+    {
+      "paint_off": {
+        "crack": "no_change",
+        "dent": "no_change",
+        "scratch": "no_change"
+      }
+    },
+    {
+      "scratch": {
+        "crack": "no_change",
+        "dent": "no_change",
+        "paint_off": "no_change"
+      }
+    }
+  ],
+  "dag_weights": {
+    "crack_to_dent": -0.2313869297504425,
+    "crack_to_paint_off": 1.0823051929473877,
+    "crack_to_scratch": 0.1574285626411438,
+    "dent_to_crack": -0.23776501417160034,
+    "dent_to_paint_off": 1.1298472881317139,
+    "dent_to_scratch": 0.8334817886352539,
+    "paint_off_to_scratch": 0.0863463431596756,
+    "scratch_to_paint_off": 0.0934303030371666
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "best_val_sev_mae": 0.7262276411056519,
+  "final_loss": 1.1709628915786743,
+  "final_rec": 0.022557488474994898,
+  "config": {
+    "z_dim": 32,
+    "z1_dim": 4,
+    "z2_dim": 8,
+    "epochs": 201,
+    "batch_size": 64,
+    "lr": 0.0001,
+    "sev_weight": 2.0,
+    "clf_weight": 1.0
+  }
+}

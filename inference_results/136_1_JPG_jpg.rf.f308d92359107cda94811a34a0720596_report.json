@@ -1,0 +1,89 @@
+{
+  "image": "causal_data\\aircraft damage\\test\\images\\136_1_JPG_jpg.rf.f308d92359107cda94811a34a0720596.jpg",
+  "probabilities": {
+    "crack": 0.019277343526482582,
+    "dent": 0.9976637363433838,
+    "paint_off": 0.00017401306831743568,
+    "scratch": 0.0019751519430428743
+  },
+  "predictions": {
+    "crack": false,
+    "dent": true,
+    "paint_off": false,
+    "scratch": false
+  },
+  "damage_severity": {
+    "count": 2,
+    "label": "Minor \u2014 2 damage instance(s)"
+  },
+  "causal_notes": [
+    "  DAG edge dent \u2192 paint_off: weight=1.130",
+    "  DAG edge dent \u2192 scratch: weight=0.833"
+  ],
+  "counterfactual_deltas": {
+    "crack": {
+      "crack": -0.008299874141812325,
+      "dent": -0.0001766681671142578,
+      "paint_off": 8.233408152591437e-05,
+      "scratch": 0.0018172278068959713
+    },
+    "dent": {
+      "crack": -0.019151637330651283,
+      "dent": -0.9948350191116333,
+      "paint_off": 0.9976975321769714,
+      "scratch": 0.9782403707504272
+    },
+    "paint_off": {
+      "crack": 1.082196831703186e-05,
+      "dent": -1.7702579498291016e-05,
+      "paint_off": 2.5967892725020647e-06,
+      "scratch": 2.985214814543724e-05
+    },
+    "scratch": {
+      "crack": -0.00013010017573833466,
+      "dent": -5.161762237548828e-05,
+      "paint_off": 1.033733133226633e-05,
+      "scratch": 0.00014861044473946095
+    }
+  },
+  "causal_indicators": [
+    {
+      "crack": {
+        "dent": "no_change",
+        "paint_off": "no_change",
+        "scratch": "no_change"
+      }
+    },
+    {
+      "dent": {
+        "crack": "no_change",
+        "paint_off": "inverse_relationship",
+        "scratch": "inverse_relationship"
+      }
+    },
+    {
+      "paint_off": {
+        "crack": "no_change",
+        "dent": "no_change",
+        "scratch": "no_change"
+      }
+    },
+    {
+      "scratch": {
+        "crack": "no_change",
+        "dent": "no_change",
+        "paint_off": "no_change"
+      }
+    }
+  ],
+  "dag_weights": {
+    "crack_to_dent": -0.2313869297504425,
+    "crack_to_paint_off": 1.0823051929473877,
+    "crack_to_scratch": 0.1574285626411438,
+    "dent_to_crack": -0.23776501417160034,
+    "dent_to_paint_off": 1.1298472881317139,
+    "dent_to_scratch": 0.8334817886352539,
+    "paint_off_to_scratch": 0.0863463431596756,
+    "scratch_to_paint_off": 0.0934303030371666
+  }
+}
