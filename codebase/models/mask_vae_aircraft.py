@@ -11,9 +11,9 @@ class CausalVAE(nn.Module):
         self,
         nn_name='mask',
         name='vae_aircraft',
-        z_dim=32,
-        z1_dim=4,
-        z2_dim=8,
+        z_dim=28,
+        z1_dim=7,
+        z2_dim=4,
         inference=False,
         alpha=0.3,
         beta=1,
@@ -28,7 +28,7 @@ class CausalVAE(nn.Module):
         self.z2_dim = z2_dim      # features per concept (8)
         self.channel = 3
 
-        # scale must be provided from dataset.aircraft_damage.SCALE (shape 4×2)
+        # scale must be provided from dataset.aircraft_damage.SCALE (shape 7×2)
         if scale is None:
             raise ValueError('Pass scale=SCALE from dataset.aircraft_damage')
         self.scale = scale

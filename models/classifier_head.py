@@ -37,6 +37,20 @@ class MultiLabelHead(nn.Module):
         return self.net(z.view(z.size(0), -1))
 
 
+class ConceptHeads(nn.Module):
+    """One linear head per observable concept, reading only its z sub-vector."""
+    def __init__(self, z2_dim: int, n_observable: int):
+        super().__init__()
+        self.heads = nn.ModuleList([
+            nn.Linear(z2_dim, 1) for _ in range(n_observable)
+        ])
+
+    def forward(self, z_dag: torch.Tensor) -> torch.Tensor:
+        # z_dag: (B, Z1_DIM, Z2_DIM) — use only first n_observable sub-vectors
+        logits = [self.heads[i](z_dag[:, i, :]) for i in range(len(self.heads))]
+        return torch.cat(logits, dim=-1)  # (B, n_observable)
+
+
 class SeverityHead(nn.Module):
     """
     Regression head for total damage instance count.

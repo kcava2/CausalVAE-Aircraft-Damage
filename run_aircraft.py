@@ -20,19 +20,19 @@ from torchvision.utils import save_image
 from codebase import utils as ut
 from codebase.models.mask_vae_aircraft import CausalVAE
 from dataset.aircraft_damage import (
-    get_dataloader, CLASS_NAMES, N_CONCEPTS, SCALE
+    get_dataloader, CLASS_NAMES, N_OBSERVABLE, SCALE
 )
 from dataset.aircraft_dag import A_INIT
 from models.classifier_head import (
-    MultiLabelHead, SeverityHead,
+    MultiLabelHead, SeverityHead, ConceptHeads,
     multilabel_loss, severity_loss, compute_metrics,
 )
 from utils import _h_A
 
 # ── Config ────────────────────────────────────────────────────────────────────
-Z1_DIM     = 4                    # concepts: crack, dent, paint_off, scratch
-Z2_DIM     = 8                    # features per concept
-Z_DIM      = Z1_DIM * Z2_DIM     # = 32
+Z1_DIM     = 7                    # concepts: 4 observable + 3 latent root causes
+Z2_DIM     = 4                    # features per concept
+Z_DIM      = Z1_DIM * Z2_DIM     # = 28
 EPOCHS     = 201
 BATCH_SIZE = 64
 LR         = 1e-4
@@ -49,12 +49,12 @@ print(f'Using device: {device}')
 train_loader = get_dataloader(DATA_ROOT, 'train', BATCH_SIZE, num_workers=0)
 val_loader   = get_dataloader(DATA_ROOT, 'valid', BATCH_SIZE, num_workers=0)
 
-# Class balance for pos_weight (concept BCE loss)
+# Class balance for pos_weight (only for N_OBSERVABLE observable concepts)
 print('Computing class statistics…')
-pos_counts = np.zeros(N_CONCEPTS, dtype=float)
+pos_counts = np.zeros(N_OBSERVABLE, dtype=float)
 n_total    = 0
 for _, labels, _ in train_loader:
-    pos_counts += labels.sum(0).numpy()
+    pos_counts += labels[:, :N_OBSERVABLE].sum(0).numpy()
     n_total    += labels.size(0)
 neg_counts = n_total - pos_counts
 pos_weight = torch.tensor(
@@ -78,8 +78,9 @@ with torch.no_grad():
     lvae.dag.A.copy_(A_INIT.to(device))
 print('DAG initialised:\n', lvae.dag.A.detach().cpu().numpy())
 
-clf      = MultiLabelHead(z_dim=Z_DIM, n_classes=N_CONCEPTS).to(device)
-sev_head = SeverityHead(z_dim=Z_DIM).to(device)
+clf           = MultiLabelHead(z_dim=Z_DIM, n_classes=N_OBSERVABLE).to(device)
+sev_head      = SeverityHead(z_dim=Z_DIM).to(device)
+concept_heads = ConceptHeads(z2_dim=Z2_DIM, n_observable=N_OBSERVABLE).to(device)
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 os.makedirs(FIG_DIR,  exist_ok=True)
@@ -95,11 +96,12 @@ other_params = (
 )
 
 optimizer = torch.optim.Adam([
-    {'params': enc_params,            'lr': LR},
-    {'params': dec_params,            'lr': 5e-4},
-    {'params': other_params,          'lr': LR},
-    {'params': clf.parameters(),      'lr': LR},
-    {'params': sev_head.parameters(), 'lr': LR},
+    {'params': enc_params,                   'lr': LR},
+    {'params': dec_params,                   'lr': 5e-4},
+    {'params': other_params,                 'lr': LR},
+    {'params': clf.parameters(),             'lr': LR},
+    {'params': sev_head.parameters(),        'lr': LR},
+    {'params': concept_heads.parameters(),   'lr': LR},
 ], betas=(0.9, 0.999))
 
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -108,9 +110,17 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
 
 # ── KL annealing ──────────────────────────────────────────────────────────────
 def kl_weight(epoch: int) -> float:
-    return min(1.0, epoch / 50.0) * 0.1
+    return min(1.0, epoch / 50.0) * 0.25
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+def total_correlation_loss(z_dag: torch.Tensor) -> torch.Tensor:
+    act   = torch.sigmoid(z_dag.mean(dim=-1))           # (B, Z1_DIM)
+    act_c = act - act.mean(dim=0, keepdim=True)
+    cov   = (act_c.T @ act_c) / act.size(0)             # (Z1_DIM, Z1_DIM)
+    eye   = torch.eye(cov.size(0), device=cov.device)
+    return ((cov * (1 - eye)) ** 2).sum()
+
+
 def denorm(t):
     mean = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1).to(t.device)
     std  = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1).to(t.device)
@@ -125,7 +135,7 @@ def save_recon_samples(imgs, recons, epoch, n=8):
 
 
 def validate(model, clf_model, sev_model, loader):
-    model.eval(); clf_model.eval(); sev_model.eval()
+    model.eval(); clf_model.eval(); sev_model.eval(); concept_heads.eval()
     all_logits, all_targets = [], []
     all_sev_pred, all_sev_tgt = [], []
     total_rec = total_kl = 0.0
@@ -156,8 +166,8 @@ def validate(model, clf_model, sev_model, loader):
     sev_tgt_all  = torch.cat(all_sev_tgt,   dim=0)
 
     metrics = compute_metrics(
-        logits_all, targets_all,
-        class_names=CLASS_NAMES,
+        logits_all, targets_all[:, :N_OBSERVABLE],
+        class_names=CLASS_NAMES[:N_OBSERVABLE],
         sev_pred=sev_pred_all,
         sev_target=sev_tgt_all,
     )
@@ -169,12 +179,13 @@ def validate(model, clf_model, sev_model, loader):
 def save_checkpoint(epoch, val_sev_mae, tag='best'):
     path = os.path.join(SAVE_DIR, f'aircraft_{tag}.pt')
     torch.save({
-        'lvae':        lvae.state_dict(),
-        'clf':         clf.state_dict(),
-        'sev_head':    sev_head.state_dict(),
-        'epoch':       epoch,
-        'val_sev_mae': val_sev_mae,
-        'config': {'z_dim': Z_DIM, 'z1_dim': Z1_DIM, 'z2_dim': Z2_DIM},
+        'lvae':          lvae.state_dict(),
+        'clf':           clf.state_dict(),
+        'sev_head':      sev_head.state_dict(),
+        'concept_heads': concept_heads.state_dict(),
+        'epoch':         epoch,
+        'val_sev_mae':   val_sev_mae,
+        'config': {'z_dim': Z_DIM, 'z1_dim': Z1_DIM, 'z2_dim': Z2_DIM, 'n_observable': N_OBSERVABLE},
     }, path)
     print(f'  Saved checkpoint → {path}')
 
@@ -212,7 +223,7 @@ history = {
 best_val_sev_mae = float('inf')
 
 for epoch in range(EPOCHS):
-    lvae.train(); clf.train(); sev_head.train()
+    lvae.train(); clf.train(); sev_head.train(); concept_heads.train()
 
     kl_w       = kl_weight(epoch)
     total_loss = total_kl = total_rec = total_clf = total_sev = 0.0
@@ -235,8 +246,11 @@ for epoch in range(EPOCHS):
         logits   = clf(z_flat)
         sev_pred = sev_head(z_flat)
 
-        clf_loss = multilabel_loss(logits, labels, pos_weight=pos_weight)
-        sev_l    = severity_loss(sev_pred, sev_counts)
+        clf_loss     = multilabel_loss(logits, labels[:, :N_OBSERVABLE], pos_weight=pos_weight)
+        sev_l        = severity_loss(sev_pred, sev_counts)
+        concept_logits = concept_heads(z_dag)
+        concept_loss = multilabel_loss(concept_logits, labels[:, :N_OBSERVABLE], pos_weight=pos_weight)
+        tc_loss      = total_correlation_loss(z_dag)
 
         mask_l = nelbo - rec - kl
         loss = (rec
@@ -244,12 +258,14 @@ for epoch in range(EPOCHS):
                 + 0.2 * mask_l
                 + dag_penalty
                 + SEV_WEIGHT * sev_l
-                + CLF_WEIGHT * clf_loss)
+                + CLF_WEIGHT * clf_loss
+                + 0.5 * concept_loss
+                + 0.1 * tc_loss)
 
         loss.backward()
         nn.utils.clip_grad_norm_(
             list(lvae.parameters()) + list(clf.parameters()) +
-            list(sev_head.parameters()),
+            list(sev_head.parameters()) + list(concept_heads.parameters()),
             max_norm=5.0,
         )
         optimizer.step()
@@ -282,7 +298,7 @@ for epoch in range(EPOCHS):
     history['sev_mae'].append(val_sev_mae)
 
     per_class_str = '  '.join(
-        f'{n}={val_metrics.get(f"f1_{n}", 0.0):.3f}' for n in CLASS_NAMES
+        f'{n}={val_metrics.get(f"f1_{n}", 0.0):.3f}' for n in CLASS_NAMES[:N_OBSERVABLE]
     )
     cur_lr = optimizer.param_groups[0]['lr']
     print(
@@ -321,7 +337,7 @@ summary = {
     'final_loss':       history['loss'][-1] if history['loss'] else None,
     'final_rec':        history['rec'][-1]  if history['rec']  else None,
     'config': {
-        'z_dim': Z_DIM, 'z1_dim': Z1_DIM, 'z2_dim': Z2_DIM,
+        'z_dim': Z_DIM, 'z1_dim': Z1_DIM, 'z2_dim': Z2_DIM, 'n_observable': N_OBSERVABLE,
         'epochs': EPOCHS, 'batch_size': BATCH_SIZE, 'lr': LR,
         'sev_weight': SEV_WEIGHT, 'clf_weight': CLF_WEIGHT,
     },

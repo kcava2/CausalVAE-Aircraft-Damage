@@ -1,48 +1,55 @@
 {
   "image": "causal_data\\aircraft damage\\test\\images\\IMG_20230513_102709_jpg.rf.9176d2ef117a1bd1fe55deb0f2f0eaa2.jpg",
   "probabilities": {
-    "crack": 0.04212873429059982,
-    "dent": 0.11593487858772278,
-    "paint_off": 0.33996912837028503,
-    "scratch": 0.029719749465584755
+    "crack": 0.014487605541944504,
+    "dent": 0.060617368668317795,
+    "paint_off": 0.6084794998168945,
+    "scratch": 0.0632392168045044
   },
   "predictions": {
     "crack": false,
     "dent": false,
-    "paint_off": false,
+    "paint_off": true,
     "scratch": false
   },
   "damage_severity": {
     "count": 0,
     "label": "None"
   },
+  "latent_root_causes": {
+    "impact_force": 0.5346304774284363,
+    "metal_fatigue": 0.6538389921188354,
+    "corrosion": 0.4344025254249573
+  },
+  "dominant_cause": "metal_fatigue",
+  "maintenance_recommendation": "Systemic issue. Review load cycle history. Inspect adjacent structure.",
   "causal_notes": [
     "No strong causal chains detected."
   ],
   "counterfactual_deltas": {
     "crack": {
-      "crack": -0.04196077585220337,
-      "dent": -0.0750504657626152,
-      "paint_off": 0.6374248266220093,
-      "scratch": 0.9483516812324524
+      "crack": -0.011368161998689175,
+      "dent": 0.013921249657869339,
+      "paint_off": 0.164167582988739,
+      "scratch": 0.25272107124328613
     },
     "dent": {
-      "crack": -0.030319087207317352,
-      "dent": -0.11231988668441772,
-      "paint_off": 0.6268516778945923,
-      "scratch": 0.12045343965291977
+      "crack": 5.360320210456848e-05,
+      "dent": -0.02103467285633087,
+      "paint_off": 0.09096109867095947,
+      "scratch": 0.0011666789650917053
     },
     "paint_off": {
-      "crack": 0.004724189639091492,
-      "dent": 0.03371959924697876,
-      "paint_off": -0.10706180334091187,
-      "scratch": -0.011358581483364105
+      "crack": 1.5729106962680817e-05,
+      "dent": 0.0027115829288959503,
+      "paint_off": -0.024153411388397217,
+      "scratch": -0.004558004438877106
     },
     "scratch": {
-      "crack": -0.0009721480309963226,
-      "dent": -0.002974286675453186,
-      "paint_off": 0.030222028493881226,
-      "scratch": 0.005986751988530159
+      "crack": 0.0031929463148117065,
+      "dent": 0.01864992454648018,
+      "paint_off": -0.010310590267181396,
+      "scratch": 0.03607308864593506
     }
   },
   "causal_indicators": [
@@ -56,8 +63,8 @@
     {
       "dent": {
         "crack": "no_change",
-        "paint_off": "inverse_relationship",
-        "scratch": "inverse_relationship"
+        "paint_off": "no_change",
+        "scratch": "no_change"
       }
     },
     {
@@ -76,13 +83,24 @@
     }
   ],
   "dag_weights": {
-    "crack_to_dent": -0.2313869297504425,
-    "crack_to_paint_off": 1.0823051929473877,
-    "crack_to_scratch": 0.1574285626411438,
-    "dent_to_crack": -0.23776501417160034,
-    "dent_to_paint_off": 1.1298472881317139,
-    "dent_to_scratch": 0.8334817886352539,
-    "paint_off_to_scratch": 0.0863463431596756,
-    "scratch_to_paint_off": 0.0934303030371666
+    "dent_to_crack": 0.9952928423881531,
+    "dent_to_paint_off": -0.05225648358464241,
+    "dent_to_scratch": 1.0289784669876099,
+    "dent_to_metal_fatigue": -0.07796081155538559,
+    "paint_off_to_metal_fatigue": -0.08882009238004684,
+    "scratch_to_paint_off": 0.9540008902549744,
+    "scratch_to_metal_fatigue": -0.06311602890491486,
+    "impact_force_to_crack": 0.9323389530181885,
+    "impact_force_to_dent": 1.1591368913650513,
+    "impact_force_to_paint_off": -0.06614658236503601,
+    "impact_force_to_scratch": 1.0029386281967163,
+    "impact_force_to_metal_fatigue": -0.08443176746368408,
+    "metal_fatigue_to_crack": 1.1262366771697998,
+    "metal_fatigue_to_dent": -0.05809112265706062,
+    "metal_fatigue_to_paint_off": 0.08060482144355774,
+    "metal_fatigue_to_impact_force": -0.12378930300474167,
+    "corrosion_to_dent": -0.06398434191942215,
+    "corrosion_to_paint_off": 1.0996499061584473,
+    "corrosion_to_scratch": -0.10036305338144302
   }
 }

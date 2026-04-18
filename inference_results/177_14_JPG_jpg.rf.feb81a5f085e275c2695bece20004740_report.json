@@ -1,10 +1,10 @@
 {
   "image": "causal_data\\aircraft damage\\test\\images\\177_14_JPG_jpg.rf.feb81a5f085e275c2695bece20004740.jpg",
   "probabilities": {
-    "crack": 0.010789798572659492,
-    "dent": 0.9813182950019836,
-    "paint_off": 0.004077708348631859,
-    "scratch": 0.030537623912096024
+    "crack": 0.019037052989006042,
+    "dent": 0.9142768383026123,
+    "paint_off": 0.025764543563127518,
+    "scratch": 0.05694291368126869
   },
   "predictions": {
     "crack": false,
@@ -16,34 +16,41 @@
     "count": 1,
     "label": "Minor \u2014 1 damage instance(s)"
   },
+  "latent_root_causes": {
+    "impact_force": 0.6297847628593445,
+    "metal_fatigue": 0.5667122006416321,
+    "corrosion": 0.4680446982383728
+  },
+  "dominant_cause": "impact_force",
+  "maintenance_recommendation": "Inspect for structural deformation. Check adjacent panels.",
   "causal_notes": [
-    "  DAG edge dent \u2192 paint_off: weight=1.130",
-    "  DAG edge dent \u2192 scratch: weight=0.833"
+    "  DAG edge dent \u2192 crack: weight=0.995",
+    "  DAG edge dent \u2192 scratch: weight=1.029"
   ],
   "counterfactual_deltas": {
     "crack": {
-      "crack": -0.006519431713968515,
-      "dent": -0.00600743293762207,
-      "paint_off": 0.004432113841176033,
-      "scratch": 0.051249656826257706
+      "crack": -0.01587556302547455,
+      "dent": -0.008606433868408203,
+      "paint_off": 0.05287152901291847,
+      "scratch": 0.3525470495223999
     },
     "dent": {
-      "crack": -0.01062966138124466,
-      "dent": -0.978735089302063,
-      "paint_off": 0.9942232370376587,
-      "scratch": 0.9521712064743042
+      "crack": -0.0021151360124349594,
+      "dent": -0.8654983639717102,
+      "paint_off": 0.8055009841918945,
+      "scratch": 0.23411670327186584
     },
     "paint_off": {
-      "crack": 0.0012027909979224205,
-      "dent": 0.006833255290985107,
-      "paint_off": -0.002208596095442772,
-      "scratch": -0.01661849394440651
+      "crack": 0.0020714569836854935,
+      "dent": 0.04685544967651367,
+      "paint_off": -0.019657298922538757,
+      "scratch": -0.04333924874663353
     },
     "scratch": {
-      "crack": 0.00045796949416399,
-      "dent": 0.000846564769744873,
-      "paint_off": -0.00047563924454152584,
-      "scratch": -0.0045306626707315445
+      "crack": -0.0017669927328824997,
+      "dent": -0.006180405616760254,
+      "paint_off": -0.0013960245996713638,
+      "scratch": -0.015569061040878296
     }
   },
   "causal_indicators": [
@@ -51,7 +58,7 @@
       "crack": {
         "dent": "no_change",
         "paint_off": "no_change",
-        "scratch": "no_change"
+        "scratch": "inverse_relationship"
       }
     },
     {
@@ -77,13 +84,24 @@
     }
   ],
   "dag_weights": {
-    "crack_to_dent": -0.2313869297504425,
-    "crack_to_paint_off": 1.0823051929473877,
-    "crack_to_scratch": 0.1574285626411438,
-    "dent_to_crack": -0.23776501417160034,
-    "dent_to_paint_off": 1.1298472881317139,
-    "dent_to_scratch": 0.8334817886352539,
-    "paint_off_to_scratch": 0.0863463431596756,
-    "scratch_to_paint_off": 0.0934303030371666
+    "dent_to_crack": 0.9952928423881531,
+    "dent_to_paint_off": -0.05225648358464241,
+    "dent_to_scratch": 1.0289784669876099,
+    "dent_to_metal_fatigue": -0.07796081155538559,
+    "paint_off_to_metal_fatigue": -0.08882009238004684,
+    "scratch_to_paint_off": 0.9540008902549744,
+    "scratch_to_metal_fatigue": -0.06311602890491486,
+    "impact_force_to_crack": 0.9323389530181885,
+    "impact_force_to_dent": 1.1591368913650513,
+    "impact_force_to_paint_off": -0.06614658236503601,
+    "impact_force_to_scratch": 1.0029386281967163,
+    "impact_force_to_metal_fatigue": -0.08443176746368408,
+    "metal_fatigue_to_crack": 1.1262366771697998,
+    "metal_fatigue_to_dent": -0.05809112265706062,
+    "metal_fatigue_to_paint_off": 0.08060482144355774,
+    "metal_fatigue_to_impact_force": -0.12378930300474167,
+    "corrosion_to_dent": -0.06398434191942215,
+    "corrosion_to_paint_off": 1.0996499061584473,
+    "corrosion_to_scratch": -0.10036305338144302
   }
 }

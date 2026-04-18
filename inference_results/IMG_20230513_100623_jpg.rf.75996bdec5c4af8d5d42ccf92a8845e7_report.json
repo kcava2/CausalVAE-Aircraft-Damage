@@ -1,48 +1,55 @@
 {
   "image": "causal_data\\aircraft damage\\test\\images\\IMG_20230513_100623_jpg.rf.75996bdec5c4af8d5d42ccf92a8845e7.jpg",
   "probabilities": {
-    "crack": 0.4824693500995636,
-    "dent": 0.0527753084897995,
-    "paint_off": 0.0675172358751297,
-    "scratch": 0.00048801154480315745
+    "crack": 0.26171836256980896,
+    "dent": 0.00952856708317995,
+    "paint_off": 0.6221864223480225,
+    "scratch": 0.0032356618903577328
   },
   "predictions": {
     "crack": false,
     "dent": false,
-    "paint_off": false,
+    "paint_off": true,
     "scratch": false
   },
   "damage_severity": {
     "count": 0,
     "label": "None"
   },
+  "latent_root_causes": {
+    "impact_force": 0.5229483842849731,
+    "metal_fatigue": 0.6762593984603882,
+    "corrosion": 0.4683709442615509
+  },
+  "dominant_cause": "metal_fatigue",
+  "maintenance_recommendation": "Systemic issue. Review load cycle history. Inspect adjacent structure.",
   "causal_notes": [
     "No strong causal chains detected."
   ],
   "counterfactual_deltas": {
     "crack": {
-      "crack": -0.4823574423789978,
-      "dent": -0.04041685163974762,
-      "paint_off": 0.9252421259880066,
-      "scratch": 0.984612226486206
+      "crack": -0.25826290249824524,
+      "dent": 0.011516165919601917,
+      "paint_off": 0.3152034282684326,
+      "scratch": 0.42905083298683167
     },
     "dent": {
-      "crack": -0.19710150361061096,
-      "dent": -0.045924700796604156,
-      "paint_off": 0.38119399547576904,
-      "scratch": 0.0008279213216155767
+      "crack": 0.00041663646697998047,
+      "dent": 0.0018724044784903526,
+      "paint_off": -0.04003441333770752,
+      "scratch": -4.673539660871029e-05
     },
     "paint_off": {
-      "crack": 0.018034309148788452,
-      "dent": 0.006931651383638382,
-      "paint_off": -0.013404373079538345,
-      "scratch": -9.229019633494318e-05
+      "crack": 0.002358078956604004,
+      "dent": 0.006178318522870541,
+      "paint_off": -0.25280362367630005,
+      "scratch": -0.00178447924554348
     },
     "scratch": {
-      "crack": -0.006258189678192139,
-      "dent": 0.00022358447313308716,
-      "paint_off": 0.009775705635547638,
-      "scratch": 0.00015479433932341635
+      "crack": 0.02445322275161743,
+      "dent": 0.002950826659798622,
+      "paint_off": -0.0005180239677429199,
+      "scratch": 0.0019053295254707336
     }
   },
   "causal_indicators": [
@@ -55,8 +62,8 @@
     },
     {
       "dent": {
-        "crack": "causal_downstream_confirmed",
-        "paint_off": "inverse_relationship",
+        "crack": "no_change",
+        "paint_off": "no_change",
         "scratch": "no_change"
       }
     },
@@ -76,13 +83,24 @@
     }
   ],
   "dag_weights": {
-    "crack_to_dent": -0.2313869297504425,
-    "crack_to_paint_off": 1.0823051929473877,
-    "crack_to_scratch": 0.1574285626411438,
-    "dent_to_crack": -0.23776501417160034,
-    "dent_to_paint_off": 1.1298472881317139,
-    "dent_to_scratch": 0.8334817886352539,
-    "paint_off_to_scratch": 0.0863463431596756,
-    "scratch_to_paint_off": 0.0934303030371666
+    "dent_to_crack": 0.9952928423881531,
+    "dent_to_paint_off": -0.05225648358464241,
+    "dent_to_scratch": 1.0289784669876099,
+    "dent_to_metal_fatigue": -0.07796081155538559,
+    "paint_off_to_metal_fatigue": -0.08882009238004684,
+    "scratch_to_paint_off": 0.9540008902549744,
+    "scratch_to_metal_fatigue": -0.06311602890491486,
+    "impact_force_to_crack": 0.9323389530181885,
+    "impact_force_to_dent": 1.1591368913650513,
+    "impact_force_to_paint_off": -0.06614658236503601,
+    "impact_force_to_scratch": 1.0029386281967163,
+    "impact_force_to_metal_fatigue": -0.08443176746368408,
+    "metal_fatigue_to_crack": 1.1262366771697998,
+    "metal_fatigue_to_dent": -0.05809112265706062,
+    "metal_fatigue_to_paint_off": 0.08060482144355774,
+    "metal_fatigue_to_impact_force": -0.12378930300474167,
+    "corrosion_to_dent": -0.06398434191942215,
+    "corrosion_to_paint_off": 1.0996499061584473,
+    "corrosion_to_scratch": -0.10036305338144302
   }
 }
