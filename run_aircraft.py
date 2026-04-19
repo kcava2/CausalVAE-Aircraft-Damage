@@ -9,6 +9,7 @@ Run from repo root:
 
 import os
 import json
+import math
 import numpy as np
 import torch
 import torch.nn as nn
@@ -38,6 +39,7 @@ BATCH_SIZE = 64
 LR         = 1e-4
 SEV_WEIGHT = 2.0    # severity is the primary supervised signal
 CLF_WEIGHT = 1.0    # concept labels keep DAG structure meaningful
+TC_WEIGHT  = 5.0    # β-TCVAE inter-concept total correlation penalty
 DATA_ROOT  = './causal_data/aircraft damage'
 SAVE_DIR   = './checkpoints'
 FIG_DIR    = './figs_aircraft'
@@ -110,15 +112,22 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
 
 # ── KL annealing ──────────────────────────────────────────────────────────────
 def kl_weight(epoch: int) -> float:
-    return min(1.0, epoch / 50.0) * 0.25
+    return min(1.0, epoch / 50.0) * 0.12
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-def total_correlation_loss(z_dag: torch.Tensor) -> torch.Tensor:
-    act   = torch.sigmoid(z_dag.mean(dim=-1))           # (B, Z1_DIM)
-    act_c = act - act.mean(dim=0, keepdim=True)
-    cov   = (act_c.T @ act_c) / act.size(0)             # (Z1_DIM, Z1_DIM)
-    eye   = torch.eye(cov.size(0), device=cov.device)
-    return ((cov * (1 - eye)) ** 2).sum()
+def minibatch_tc(z: torch.Tensor) -> torch.Tensor:
+    """
+    Inter-concept total correlation via minibatch weighted sampling.
+    Chen et al. 2018 (β-TCVAE), Eq. 4.
+    z: (B, Z1_DIM, Z2_DIM) — concept sub-vectors (used as both sample and mean)
+    """
+    B, z1_dim, _ = z.shape
+    z_n  = z.unsqueeze(1)   # (B, 1, z1_dim, z2_dim)
+    mu_m = z.unsqueeze(0)   # (1, B, z1_dim, z2_dim)
+    log_q_z_given_x = -0.5 * ((z_n - mu_m) ** 2).sum(-1)  # (B, B, z1_dim)
+    log_q_z    = torch.logsumexp(log_q_z_given_x.sum(-1), dim=1) - math.log(B)
+    log_prod_q = (torch.logsumexp(log_q_z_given_x, dim=1) - math.log(B)).sum(-1)
+    return (log_q_z - log_prod_q).mean()
 
 
 def denorm(t):
@@ -226,7 +235,7 @@ for epoch in range(EPOCHS):
     lvae.train(); clf.train(); sev_head.train(); concept_heads.train()
 
     kl_w       = kl_weight(epoch)
-    total_loss = total_kl = total_rec = total_clf = total_sev = 0.0
+    total_loss = total_kl = total_rec = total_clf = total_sev = total_tc = 0.0
     last_recon = last_imgs = None
 
     for imgs, labels, sev_counts in train_loader:
@@ -250,7 +259,7 @@ for epoch in range(EPOCHS):
         sev_l        = severity_loss(sev_pred, sev_counts)
         concept_logits = concept_heads(z_dag)
         concept_loss = multilabel_loss(concept_logits, labels[:, :N_OBSERVABLE], pos_weight=pos_weight)
-        tc_loss      = total_correlation_loss(z_dag)
+        tc_loss      = minibatch_tc(z_dag)
 
         mask_l = nelbo - rec - kl
         loss = (rec
@@ -259,8 +268,8 @@ for epoch in range(EPOCHS):
                 + dag_penalty
                 + SEV_WEIGHT * sev_l
                 + CLF_WEIGHT * clf_loss
-                + 0.5 * concept_loss
-                + 0.1 * tc_loss)
+                + 1.0 * concept_loss
+                + TC_WEIGHT * tc_loss)
 
         loss.backward()
         nn.utils.clip_grad_norm_(
@@ -275,6 +284,7 @@ for epoch in range(EPOCHS):
         total_rec  += rec.item()
         total_clf  += clf_loss.item()
         total_sev  += sev_l.item()
+        total_tc   += tc_loss.item()
         last_recon, last_imgs = recon, imgs
 
     n_batches = len(train_loader)
@@ -283,6 +293,7 @@ for epoch in range(EPOCHS):
     avg_rec   = total_rec  / n_batches
     avg_clf   = total_clf  / n_batches
     avg_sev   = total_sev  / n_batches
+    avg_tc    = total_tc   / n_batches
 
     val_metrics  = validate(lvae, clf, sev_head, val_loader)
     val_sev_mae  = val_metrics.get('sev_mae', float('inf'))
@@ -303,7 +314,7 @@ for epoch in range(EPOCHS):
     cur_lr = optimizer.param_groups[0]['lr']
     print(
         f'[{epoch:03d}/{EPOCHS}] loss={avg_loss:.4f}  rec={avg_rec:.4f}  '
-        f'sev={avg_sev:.4f}  clf={avg_clf:.4f}  '
+        f'sev={avg_sev:.4f}  clf={avg_clf:.4f}  tc={avg_tc:.3f}  '
         f'val_sev_mae={val_sev_mae:.3f}  val_sev_acc={val_sev_acc:.3f}  '
         f'val_f1={val_f1:.3f}  kl_w={kl_w:.3f}  lr={cur_lr:.2e}\n'
         f'         per-class: {per_class_str}'

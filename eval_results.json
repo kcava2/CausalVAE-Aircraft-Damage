@@ -3,191 +3,166 @@
   "split": "test",
   "n_images": 429,
   "severity": {
-    "mae": 0.7457764744758606,
-    "rmse": 1.3070478439331055,
-    "exact_acc": 0.5804195804195804,
-    "within1_acc": 0.7738927738927739
+    "mae": 0.7408671975135803,
+    "rmse": 1.3332692384719849,
+    "exact_acc": 0.6037296037296037,
+    "within1_acc": 0.7692307692307693
   },
   "detection": {
-    "f1_macro": 0.6662198024094128,
-    "precision_macro": 0.6040803210623168,
-    "recall_macro": 0.7803751803751804,
+    "f1_macro": 0.7538725462439022,
+    "precision_macro": 0.7559102755026061,
+    "recall_macro": 0.7577831890331891,
     "per_class": {
       "crack": {
-        "f1": 0.8318181818181818,
-        "precision": 0.8318181818181818,
-        "recall": 0.8318181818181818
+        "f1": 0.8227571115973742,
+        "precision": 0.7932489451476793,
+        "recall": 0.8545454545454545
       },
       "dent": {
-        "f1": 0.8416289592760181,
-        "precision": 0.8230088495575221,
-        "recall": 0.8611111111111112
+        "f1": 0.8428571428571429,
+        "precision": 0.8676470588235294,
+        "recall": 0.8194444444444444
       },
       "paint_off": {
-        "f1": 0.46511627906976744,
-        "precision": 0.3448275862068966,
-        "recall": 0.7142857142857143
+        "f1": 0.5806451612903226,
+        "precision": 0.5294117647058824,
+        "recall": 0.6428571428571429
       },
       "scratch": {
-        "f1": 0.5263157894736842,
-        "precision": 0.4166666666666667,
+        "f1": 0.7692307692307693,
+        "precision": 0.8333333333333334,
         "recall": 0.7142857142857143
       }
     }
   },
   "reconstruction": {
-    "avg_mse": 0.03150065017065832
+    "avg_mse": 0.024667847768536637
   },
   "auc_roc": {
-    "macro": 0.9246823402762115,
+    "macro": 0.919043706149951,
     "per_class": {
-      "crack": 0.9026968247063942,
-      "dent": 0.8897800382542166,
-      "paint_off": 0.9197934595524957,
-      "scratch": 0.98645903859174
+      "crack": 0.8777946933449325,
+      "dent": 0.8949965223439402,
+      "paint_off": 0.9203098106712565,
+      "scratch": 0.9830737982396751
     }
-  },
-  "causal_faithfulness": {
-    "score": 0.375,
-    "n_faithful": 3,
-    "n_total": 8,
-    "per_edge": {
-      "impact_force_to_dent": {
-        "effect": 0.07628559078673869,
-        "faithful": true,
-        "is_dag_edge": true,
-        "n_images": 429
-      },
-      "impact_force_to_scratch": {
-        "effect": -0.036111794294867314,
-        "faithful": false,
-        "is_dag_edge": true,
-        "n_images": 429
-      },
-      "impact_force_to_crack": {
-        "effect": 0.021258671549086394,
-        "faithful": false,
-        "is_dag_edge": true,
-        "n_images": 429
-      },
-      "metal_fatigue_to_crack": {
-        "effect": 0.13443791635072894,
-        "faithful": true,
-        "is_dag_edge": true,
-        "n_images": 429
-      },
-      "corrosion_to_paint_off": {
-        "effect": 0.06720172107054226,
-        "faithful": true,
-        "is_dag_edge": true,
-        "n_images": 429
-      },
-      "dent_to_crack": {
-        "effect": -0.034868906813682266,
-        "faithful": false,
-        "is_dag_edge": true,
-        "n_images": 216
-      },
-      "dent_to_scratch": {
-        "effect": -0.20780411238646113,
-        "faithful": false,
-        "is_dag_edge": true,
-        "n_images": 216
-      },
-      "scratch_to_paint_off": {
-        "effect": -0.04852223689002644,
-        "faithful": false,
-        "is_dag_edge": true,
-        "n_images": 7
-      },
-      "crack_to_dent": {
-        "effect": -0.11261298673185094,
-        "faithful": false,
-        "is_dag_edge": false,
-        "n_images": 220
-      },
-      "crack_to_paint_off": {
-        "effect": -0.4964030556184216,
-        "faithful": false,
-        "is_dag_edge": false,
-        "n_images": 220
-      },
-      "scratch_to_dent": {
-        "effect": 0.10536102418388632,
-        "faithful": true,
-        "is_dag_edge": false,
-        "n_images": 7
-      },
-      "corrosion_to_crack": {
-        "effect": -0.021623957276358963,
-        "faithful": false,
-        "is_dag_edge": false,
-        "n_images": 429
-      }
-    },
-    "interpretation": "Causal faithfulness: 3/8 edges faithful \u2014 partial causal structure"
   },
   "concept_activation": {
     "specificity_per_concept": {
-      "crack": 0.2777433494726817,
-      "dent": 0.23452483614285785,
-      "paint_off": 0.15869335333506268,
-      "scratch": 0.07434535026550293
+      "crack": 0.09586679935455322,
+      "dent": 0.07634318868319195,
+      "paint_off": 0.03958774606386822,
+      "scratch": 0.2871750295162201
     },
-    "mean_specificity": 0.1863267223040263,
+    "mean_specificity": 0.12474319090445837,
     "activation_table": {
       "crack": {
-        "crack": 0.632046639919281,
-        "dent": 0.42426106333732605,
-        "paint_off": 0.3989136815071106,
-        "scratch": 0.23973512649536133
+        "crack": 0.5731678605079651,
+        "dent": 0.4883728623390198,
+        "paint_off": 0.47206181287765503,
+        "scratch": 0.4714685082435608
       },
       "dent": {
-        "crack": 0.4146624505519867,
-        "dent": 0.6166113615036011,
-        "paint_off": 0.3152103126049042,
-        "scratch": 0.41638681292533875
+        "crack": 0.43869900703430176,
+        "dent": 0.5012410283088684,
+        "paint_off": 0.39925915002822876,
+        "scratch": 0.4367353618144989
       },
       "paint_off": {
-        "crack": 0.28238722681999207,
-        "dent": 0.27600154280662537,
-        "paint_off": 0.4791789650917053,
-        "scratch": 0.40306806564331055
+        "crack": 0.28288841247558594,
+        "dent": 0.2830564081668854,
+        "paint_off": 0.323161780834198,
+        "scratch": 0.28477728366851807
       },
       "scratch": {
-        "crack": 0.2783516049385071,
-        "dent": 0.3036745488643646,
-        "paint_off": 0.2793813645839691,
-        "scratch": 0.3614811897277832
+        "crack": 0.25854501128196716,
+        "dent": 0.2597872316837311,
+        "paint_off": 0.3104003369808197,
+        "scratch": 0.5634192228317261
       },
       "impact_force": {
-        "crack": 0.5682963132858276,
-        "dent": 0.6294812560081482,
-        "paint_off": 0.583419144153595,
-        "scratch": 0.6490041017532349
+        "crack": 0.5994666814804077,
+        "dent": 0.6048464775085449,
+        "paint_off": 0.5945160984992981,
+        "scratch": 0.6031237244606018
       },
       "metal_fatigue": {
-        "crack": 0.6596785187721252,
-        "dent": 0.5730765461921692,
-        "paint_off": 0.6186617612838745,
-        "scratch": 0.5438129305839539
+        "crack": 0.6224191784858704,
+        "dent": 0.6147973537445068,
+        "paint_off": 0.6186652183532715,
+        "scratch": 0.6193152070045471
       },
       "corrosion": {
-        "crack": 0.5016359090805054,
-        "dent": 0.46728605031967163,
-        "paint_off": 0.5140060782432556,
-        "scratch": 0.48998403549194336
+        "crack": 0.4988163411617279,
+        "dent": 0.4923233389854431,
+        "paint_off": 0.5153606534004211,
+        "scratch": 0.4986555576324463
       }
     }
   },
-  "mig": {
-    "overall": 0.07514193567102222,
-    "per_class": {
-      "crack": 0.06278877044707983,
-      "dent": 0.0395088147180612,
-      "paint_off": 0.14343056618354103,
-      "scratch": 0.054839591335406855
+  "disentanglement": {
+    "mic_overall": 0.12843195358426795,
+    "mic_per_class": {
+      "crack": 0.2153977438355275,
+      "dent": 0.21098772960707363,
+      "paint_off": 0.04853615789559243,
+      "scratch": 0.03880618299887825
     },
-    "interpretation": "MIG: 0.075 \u2014 Poor disentanglement, concepts capture distinct damage types"
+    "mic_interpretation": "MIC: 0.128 \u2014 Acceptable coverage of ground-truth factors",
+    "tic_overall": 0.12101790030718419,
+    "tic_per_concept": {
+      "crack": 0.2153977438355275,
+      "dent": 0.21098772960707363,
+      "paint_off": 0.04853615789559243,
+      "scratch": 0.03880618299887825,
+      "impact_force": 0.14501996719042676,
+      "metal_fatigue": 0.11484281220654181,
+      "corrosion": 0.07353470841624897
+    },
+    "tic_interpretation": "TIC: 0.121 \u2014 Acceptable latent concept utility",
+    "mi_matrix": {
+      "crack": {
+        "crack": 0.2153977438355275,
+        "dent": 0.08214423988803843,
+        "paint_off": 0.03477659698525512,
+        "scratch": 0.017147328340381764
+      },
+      "dent": {
+        "crack": 0.048445113124036154,
+        "dent": 0.21098772960707363,
+        "paint_off": 0.028383996639226004,
+        "scratch": 0.01386036765269702
+      },
+      "paint_off": {
+        "crack": 0.009052084529704615,
+        "dent": 0.009110128131014167,
+        "paint_off": 0.04853615789559243,
+        "scratch": 0.020263643243869624
+      },
+      "scratch": {
+        "crack": 0.0312545950015678,
+        "dent": 0.03198591560628518,
+        "paint_off": 0.018658776024648226,
+        "scratch": 0.03880618299887825
+      },
+      "impact_force": {
+        "crack": 0.0972866851865587,
+        "dent": 0.14501996719042676,
+        "paint_off": 0.02322228870876706,
+        "scratch": 0.01374522716895904
+      },
+      "metal_fatigue": {
+        "crack": 0.11484281220654181,
+        "dent": 0.11128780030394146,
+        "paint_off": 0.012025219465999642,
+        "scratch": 0.009126209184381331
+      },
+      "corrosion": {
+        "crack": 0.05309495532878593,
+        "dent": 0.07353470841624897,
+        "paint_off": 0.040291386639454724,
+        "scratch": 0.009126209184381331
+      }
+    }
   }
 }

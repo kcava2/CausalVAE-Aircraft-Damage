@@ -8,9 +8,8 @@ Computes:
      Reconstruction        — MSE
 
   1. AUC-ROC               — per-class and macro, with ROC curve plot
-  2. Causal Faithfulness   — do-operator interventions on each DAG edge
-  3. Concept Activation    — specificity heatmap and distributions
-  4. MIG                   — Mutual Information Gap disentanglement score
+  2. Concept Activation    — specificity heatmap and distributions
+  3. MIC / TIC             — Mutual Information Completeness / Total Information Content
 
 Run from repo root:
     python evaluate_aircraft.py --checkpoint checkpoints/aircraft_best.pt
@@ -24,7 +23,6 @@ import os
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -32,7 +30,6 @@ from tqdm import tqdm
 
 from sklearn.metrics import roc_auc_score, roc_curve, mutual_info_score
 
-from codebase import utils as ut
 from codebase.models.mask_vae_aircraft import CausalVAE
 from dataset.aircraft_damage import get_dataloader, CLASS_NAMES, N_CONCEPTS, N_OBSERVABLE, SCALE
 from models.classifier_head import MultiLabelHead, SeverityHead, compute_metrics
@@ -86,24 +83,6 @@ sev_head.eval()
 # ── Data ──────────────────────────────────────────────────────────────────────
 loader = get_dataloader(args.data_root, args.split, args.batch_size, num_workers=0)
 print(f'Images     : {len(loader.dataset)}')
-
-
-# ── Encoding helper (for faithfulness test) ───────────────────────────────────
-@torch.no_grad()
-def encode_f_z1(imgs: torch.Tensor) -> torch.Tensor:
-    """Encode images and return f_z1 shape (batch, Z1_DIM, Z2_DIM) without noise."""
-    feat, _ = lvae.enc.encode(imgs)
-    q_m_full, _ = ut.gaussian_parameters(feat, dim=1)
-    q_m = lvae.enc_proj(q_m_full.view(imgs.size(0), -1))
-    q_m = q_m.reshape([imgs.size(0), Z1_DIM, Z2_DIM])
-    decode_m, _ = lvae.dag.calculate_dag(
-        q_m, torch.ones(imgs.size(0), Z1_DIM, Z2_DIM).to(device)
-    )
-    decode_m = decode_m.reshape([imgs.size(0), Z1_DIM, Z2_DIM])
-    m_zm    = lvae.dag.mask_z(decode_m).reshape([imgs.size(0), Z1_DIM, Z2_DIM])
-    f_z     = lvae.mask_z.mix(m_zm).reshape([imgs.size(0), Z1_DIM, Z2_DIM])
-    e_tilde = lvae.attn.attention(decode_m, q_m)[0]
-    return f_z + e_tilde
 
 
 # ── Main evaluation loop (collect predictions + latents) ─────────────────────
@@ -231,146 +210,6 @@ plt.close(fig)
 print('    → eval_plots/roc_curves.png')
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# EVAL 2 — CAUSAL FAITHFULNESS
-# ══════════════════════════════════════════════════════════════════════════════
-print(f'\n{SEP}')
-print('  Eval 2: Causal Faithfulness')
-print(SEP)
-
-# (parent, child, is_dag_edge)
-EDGES = [
-    (4, 1, True),  (4, 3, True),  (4, 0, True),  # impact_force → dent, scratch, crack
-    (5, 0, True),                                  # metal_fatigue → crack
-    (6, 2, True),                                  # corrosion → paint_off
-    (1, 0, True),  (1, 3, True),                   # dent → crack, scratch
-    (3, 2, True),                                  # scratch → paint_off
-    (0, 1, False), (0, 2, False),                  # crack non-edges
-    (3, 1, False),                                 # scratch → dent (non-edge)
-    (6, 0, False),                                 # corrosion → crack (non-edge)
-]
-
-effect_matrix = np.full((Z1_DIM, _N_OBS), np.nan)  # (7 parents, 4 children)
-edge_results  = {}
-
-for parent, child, is_dag in tqdm(EDGES, desc='Faithfulness'):
-    all_child_on  = []
-    all_child_off = []
-
-    for imgs, labels, _ in loader:
-        imgs   = imgs.to(device)
-        labels = labels.to(device)
-
-        # Select images where parent activates
-        if parent < _N_OBS:
-            mask = labels[:, parent] > 0.5
-        else:
-            with torch.no_grad():
-                fz1_tmp = encode_f_z1(imgs)
-            mask = torch.sigmoid(fz1_tmp[:, parent, :].mean(dim=-1)) > 0.4
-
-        if mask.sum() == 0:
-            continue
-
-        imgs_sel   = imgs[mask]
-        with torch.no_grad():
-            f_z1 = encode_f_z1(imgs_sel)
-
-            f_z1_on  = f_z1.clone(); f_z1_on[:, parent, :]  = 1.0
-            f_z1_off = f_z1.clone(); f_z1_off[:, parent, :] = -1.0
-
-            v_small = torch.ones_like(f_z1) * 0.001
-            z_on  = ut.conditional_sample_gaussian(f_z1_on,  v_small)
-            z_off = ut.conditional_sample_gaussian(f_z1_off, v_small)
-
-            if child < _N_OBS:
-                p_on  = torch.sigmoid(clf(z_on.reshape(z_on.size(0),  -1))[:, child])
-                p_off = torch.sigmoid(clf(z_off.reshape(z_off.size(0), -1))[:, child])
-            else:
-                p_on  = torch.sigmoid(z_on[:,  child, :].mean(dim=-1))
-                p_off = torch.sigmoid(z_off[:, child, :].mean(dim=-1))
-
-        all_child_on.extend(p_on.cpu().tolist())
-        all_child_off.extend(p_off.cpu().tolist())
-
-    if not all_child_on:
-        edge_key = f'{CLASS_NAMES[parent]}_to_{CLASS_NAMES[child]}'
-        edge_results[edge_key] = {'effect': float('nan'), 'faithful': False,
-                                  'is_dag_edge': is_dag, 'n_images': 0}
-        continue
-
-    causal_effect = float(np.mean(all_child_on) - np.mean(all_child_off))
-    faithful      = causal_effect > 0.05
-
-    if child < _N_OBS:
-        effect_matrix[parent, child] = causal_effect
-
-    edge_key = f'{CLASS_NAMES[parent]}_to_{CLASS_NAMES[child]}'
-    edge_results[edge_key] = {
-        'effect': causal_effect, 'faithful': faithful,
-        'is_dag_edge': is_dag, 'n_images': len(all_child_on),
-    }
-
-    edge_type = 'DAG edge' if is_dag else 'non-edge'
-    status    = 'FAITHFUL' if faithful else 'unfaithful'
-    print(f'    {CLASS_NAMES[parent]:>14} → {CLASS_NAMES[child]:<12}  '
-          f'effect={causal_effect:+.3f}  {status}  [{edge_type}]')
-
-dag_edges     = [e for e in edge_results.values() if e['is_dag_edge']]
-n_dag_total   = len(dag_edges)
-n_dag_faithful= sum(1 for e in dag_edges if e['faithful'])
-faith_score   = n_dag_faithful / max(n_dag_total, 1)
-faith_interp  = (f'Causal faithfulness: {n_dag_faithful}/{n_dag_total} edges faithful'
-                 + (' — model has learned causal structure'
-                    if faith_score >= 0.625 else ' — partial causal structure'))
-
-print(f'\n    {faith_interp}')
-
-# Faithfulness heatmap
-fig, ax = plt.subplots(figsize=(7, 7))
-fig.patch.set_facecolor('#1c1c1c')
-ax.set_facecolor('#1c1c1c')
-
-# Fill matrix cells
-vmax = max(0.5, np.nanmax(np.abs(effect_matrix)))
-cmap = plt.cm.RdYlGn
-im   = ax.imshow(effect_matrix, cmap=cmap, vmin=-vmax, vmax=vmax,
-                 aspect='auto', interpolation='nearest')
-
-# Annotate and draw borders
-tested_cells = {(p, c): (is_dag, eff) for (p, c, is_dag) in EDGES
-                if c < _N_OBS
-                for eff in [effect_matrix[p, c]]}
-
-for p, c, is_dag in EDGES:
-    if c >= _N_OBS:
-        continue
-    eff = effect_matrix[p, c]
-    txt = f'{eff:+.2f}' if not np.isnan(eff) else 'n/a'
-    ax.text(c, p, txt, ha='center', va='center', fontsize=7,
-            color='white', fontweight='bold')
-    lw    = 2.5 if is_dag else 1.2
-    ls    = '-' if is_dag else '--'
-    ec    = 'white' if is_dag else '#888888'
-    rect  = mpatches.FancyBboxPatch(
-        (c - 0.48, p - 0.48), 0.96, 0.96,
-        boxstyle='square,pad=0', linewidth=lw, linestyle=ls,
-        edgecolor=ec, facecolor='none'
-    )
-    ax.add_patch(rect)
-
-ax.set_xticks(range(_N_OBS))
-ax.set_xticklabels(OBS_NAMES, color='white', fontsize=9)
-ax.set_yticks(range(Z1_DIM))
-ax.set_yticklabels(CLASS_NAMES[:Z1_DIM], color='white', fontsize=9)
-ax.set_xlabel('Child concept (observable)', color='white')
-ax.set_ylabel('Parent concept', color='white')
-ax.set_title('Causal Faithfulness — Intervention Effects', color='white')
-plt.colorbar(im, ax=ax, label='Causal Effect (on − off)')
-plt.tight_layout()
-plt.savefig('eval_plots/causal_faithfulness.png', dpi=130, facecolor='#1c1c1c')
-plt.close(fig)
-print('    → eval_plots/causal_faithfulness.png')
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -484,48 +323,56 @@ print('    → eval_plots/concept_activation_distributions.png')
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# EVAL 4 — MIG (Mutual Information Gap)
+# EVAL 4 — MIC / TIC (Mutual Information Completeness / Total Information Content)
 # ══════════════════════════════════════════════════════════════════════════════
 print(f'\n{SEP}')
-print('  Eval 4: Disentanglement (MIG)')
+print('  Eval 4: Disentanglement (MIC / TIC)')
 print(SEP)
 
-mig_per_class = {}
-for j, name in enumerate(OBS_NAMES):
-    gt = labels_obs[:, j].astype(int)
-    p  = gt.mean()
-    if p <= 0 or p >= 1:
-        mig_per_class[name] = 0.0
-        continue
+# MI matrix: mi_matrix[i, j] = MI(activation of z_i, label g_j)  shape (Z1_DIM, _N_OBS)
+mi_matrix = np.zeros((Z1_DIM, _N_OBS))
+for i in range(Z1_DIM):
+    acts_i = act_matrix[:, i]
+    bins_i = np.digitize(acts_i, np.percentile(acts_i, np.linspace(0, 100, 11)[1:-1]))
+    for j in range(_N_OBS):
+        mi_matrix[i, j] = mutual_info_score(labels_obs[:, j].astype(int), bins_i)
 
-    H_j = -(p * math.log2(p + 1e-10) + (1 - p) * math.log2(1 - p + 1e-10))
+# MIC — completeness: for each ground-truth factor, best-matching latent
+mic_per_class = {OBS_NAMES[j]: float(np.max(mi_matrix[:, j])) for j in range(_N_OBS)}
+overall_mic   = float(np.mean(list(mic_per_class.values())))
 
-    mis = []
-    for k in range(Z1_DIM):
-        acts_k = act_matrix[:, k]
-        bins   = np.digitize(acts_k,
-                             np.percentile(acts_k, np.linspace(0, 100, 11)[1:-1]))
-        mi = mutual_info_score(gt, bins)
-        mis.append(mi)
+# TIC — utility: for each latent, best-matching ground-truth factor
+tic_per_concept = {CLASS_NAMES[i]: float(np.max(mi_matrix[i, :])) for i in range(Z1_DIM)}
+overall_tic     = float(np.mean(list(tic_per_concept.values())))
 
-    mis_sorted = sorted(mis, reverse=True)
-    MI1, MI2   = mis_sorted[0], mis_sorted[1] if len(mis_sorted) > 1 else 0.0
-    mig_j      = (MI1 - MI2) / (H_j + 1e-10)
-    mig_per_class[name] = float(mig_j)
+# Normalise against mean binary entropy of labels (nats) for radar chart
+h_vals = []
+for j in range(_N_OBS):
+    p = labels_obs[:, j].mean()
+    if 0 < p < 1:
+        h_vals.append(-(p * math.log(p) + (1 - p) * math.log(1 - p)))
+h_mean  = float(np.mean(h_vals)) if h_vals else 0.693
+mic_norm = min(overall_mic / h_mean, 1.0)
+tic_norm = min(overall_tic / h_mean, 1.0)
 
-overall_mig = float(np.mean(list(mig_per_class.values())))
-
-def _mig_interp(mig: float) -> str:
-    if mig > 0.35:  return 'Excellent'
-    if mig > 0.20:  return 'Good'
-    if mig > 0.10:  return 'Acceptable'
+def _mi_interp(mi: float) -> str:
+    if mi > 0.30:  return 'Excellent'
+    if mi > 0.15:  return 'Good'
+    if mi > 0.05:  return 'Acceptable'
     return 'Poor'
 
-for name, mig_j in mig_per_class.items():
-    print(f'    {name:<12}  MIG = {mig_j:.3f}  ({_mig_interp(mig_j)})')
-mig_interp_str = (f'MIG: {overall_mig:.3f} — {_mig_interp(overall_mig)} '
-                  f'disentanglement, concepts capture distinct damage types')
-print(f'\n    Overall  {mig_interp_str}')
+print('  MIC (coverage — each ground-truth factor captured by best latent):')
+for name, mic_j in mic_per_class.items():
+    print(f'    {name:<12}  MIC = {mic_j:.3f}  ({_mi_interp(mic_j)})')
+print(f'    Overall MIC = {overall_mic:.3f}  ({_mi_interp(overall_mic)})')
+
+print('\n  TIC (utility — each latent captures something meaningful):')
+for name, tic_i in tic_per_concept.items():
+    print(f'    {name:<16}  TIC = {tic_i:.3f}  ({_mi_interp(tic_i)})')
+print(f'    Overall TIC = {overall_tic:.3f}  ({_mi_interp(overall_tic)})')
+
+mic_interp_str = f'MIC: {overall_mic:.3f} — {_mi_interp(overall_mic)} coverage of ground-truth factors'
+tic_interp_str = f'TIC: {overall_tic:.3f} — {_mi_interp(overall_tic)} latent concept utility'
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -535,11 +382,10 @@ print(f'\n{SEP}')
 print('  Summary radar chart')
 print(SEP)
 
-radar_labels  = ['Macro\nAUC-ROC', 'Causal\nFaithfulness', 'Mean\nSpecificity', 'MIG\nScore']
+radar_labels  = ['Macro\nAUC-ROC', 'Mean\nSpecificity', 'MIC', 'TIC']
 macro_auc_clipped = max(0.0, min(1.0, macro_auc if not math.isnan(macro_auc) else 0.0))
-mig_norm          = min(overall_mig / 0.5, 1.0)
 spec_norm         = max(0.0, min(1.0, (mean_specificity + 0.5) / 1.0))
-radar_values      = [macro_auc_clipped, faith_score, spec_norm, mig_norm]
+radar_values      = [macro_auc_clipped, spec_norm, mic_norm, tic_norm]
 
 N_axes  = len(radar_labels)
 angles  = [n / N_axes * 2 * math.pi for n in range(N_axes)]
@@ -579,9 +425,9 @@ print(f'\n{SEP}')
 print('  FINAL EVALUATION SUMMARY')
 print(SEP)
 print(f'\n  Macro AUC-ROC     : {macro_auc:.3f}')
-print(f'  {faith_interp}')
 print(f'  Mean specificity  : {mean_specificity:.3f}')
-print(f'  {mig_interp_str}')
+print(f'  {mic_interp_str}')
+print(f'  {tic_interp_str}')
 print(f'\n{SEP}\n')
 
 # ── Save JSON ─────────────────────────────────────────────────────────────────
@@ -613,13 +459,6 @@ report = {
         'macro':     macro_auc,
         'per_class': auc_per_class,
     },
-    'causal_faithfulness': {
-        'score':       faith_score,
-        'n_faithful':  n_dag_faithful,
-        'n_total':     n_dag_total,
-        'per_edge':    edge_results,
-        'interpretation': faith_interp,
-    },
     'concept_activation': {
         'specificity_per_concept': spec_per_concept,
         'mean_specificity':        mean_specificity,
@@ -629,10 +468,17 @@ report = {
             for i in range(Z1_DIM)
         },
     },
-    'mig': {
-        'overall':       overall_mig,
-        'per_class':     mig_per_class,
-        'interpretation': mig_interp_str,
+    'disentanglement': {
+        'mic_overall':       overall_mic,
+        'mic_per_class':     mic_per_class,
+        'mic_interpretation': mic_interp_str,
+        'tic_overall':       overall_tic,
+        'tic_per_concept':   tic_per_concept,
+        'tic_interpretation': tic_interp_str,
+        'mi_matrix': {
+            CLASS_NAMES[i]: {OBS_NAMES[j]: float(mi_matrix[i, j]) for j in range(_N_OBS)}
+            for i in range(Z1_DIM)
+        },
     },
 }
 
