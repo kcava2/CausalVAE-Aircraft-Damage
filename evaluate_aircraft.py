@@ -187,9 +187,8 @@ for name, auc in auc_per_class.items():
 print(f'    {"MACRO":<12}  AUC = {macro_auc:.3f}')
 
 # ROC curve plot
-plt.style.use('dark_background')
 fig, ax = plt.subplots(figsize=(7, 6))
-ax.plot([0, 1], [0, 1], '--', color='#555555', linewidth=1, label='Random')
+ax.plot([0, 1], [0, 1], '--', color='#aaaaaa', linewidth=1, label='Random')
 for j, name in enumerate(OBS_NAMES):
     try:
         fpr, tpr, _ = roc_curve(labels_obs[:, j], probs_all[:, j])
@@ -198,14 +197,12 @@ for j, name in enumerate(OBS_NAMES):
                 label=f'{name}  (AUC={auc_val:.3f})')
     except ValueError:
         pass
-ax.set_xlabel('False Positive Rate', color='white')
-ax.set_ylabel('True Positive Rate', color='white')
-ax.set_title('ROC Curves — Observable Damage Concepts', color='white')
-ax.legend(fontsize=9, facecolor='#2a2a2a', edgecolor='#444444', labelcolor='white')
-ax.set_facecolor('#1c1c1c')
-fig.patch.set_facecolor('#1c1c1c')
+ax.set_xlabel('False Positive Rate')
+ax.set_ylabel('True Positive Rate')
+ax.set_title('ROC Curves — Observable Damage Concepts')
+ax.legend(fontsize=9)
 plt.tight_layout()
-plt.savefig('eval_plots/roc_curves.png', dpi=130, facecolor='#1c1c1c')
+plt.savefig('eval_plots/roc_curves.png', dpi=130)
 plt.close(fig)
 print('    → eval_plots/roc_curves.png')
 
@@ -248,8 +245,6 @@ print(f'    Mean specificity  : {mean_specificity:.3f}')
 
 # ── Plot 1: Activation matrix heatmap ────────────────────────────────────────
 fig, ax = plt.subplots(figsize=(6, 8))
-fig.patch.set_facecolor('#1c1c1c')
-ax.set_facecolor('#1c1c1c')
 
 im = ax.imshow(table, cmap='viridis', vmin=0, vmax=1,
                aspect='auto', interpolation='nearest')
@@ -267,32 +262,30 @@ for i in range(Z1_DIM):
         txt = f'{val:.2f}' if not np.isnan(val) else '-'
         star = ' ★' if j in expected.get(i, []) else ''
         ax.text(j, i, txt + star, ha='center', va='center',
-                fontsize=8, color='white')
+                fontsize=8, color='black')
 
 ax.set_xticks(range(_N_OBS))
-ax.set_xticklabels(OBS_NAMES, color='white', fontsize=9)
+ax.set_xticklabels(OBS_NAMES, fontsize=9)
 ax.set_yticks(range(Z1_DIM))
 yticklabels = (
     [f'{n} (obs)' for n in OBS_NAMES]
     + [f'{n} (latent)' for n in LATENT_NAMES]
 )
-ax.set_yticklabels(yticklabels[:Z1_DIM], color='white', fontsize=8)
-ax.set_xlabel('Observable damage class present', color='white')
-ax.set_ylabel('Concept sub-vector', color='white')
-ax.set_title('Concept Activation Matrix\n(★ = expected high activation)', color='white')
+ax.set_yticklabels(yticklabels[:Z1_DIM], fontsize=8)
+ax.set_xlabel('Observable damage class present')
+ax.set_ylabel('Concept sub-vector')
+ax.set_title('Concept Activation Matrix\n(★ = expected high activation)')
 plt.colorbar(im, ax=ax, label='Mean activation (sigmoid)')
 plt.tight_layout()
-plt.savefig('eval_plots/concept_activation_matrix.png', dpi=130, facecolor='#1c1c1c')
+plt.savefig('eval_plots/concept_activation_matrix.png', dpi=130)
 plt.close(fig)
 print('    → eval_plots/concept_activation_matrix.png')
 
 # ── Plot 2: Violin / distribution plots for observable concepts ───────────────
 fig, axes = plt.subplots(2, 2, figsize=(10, 7))
-fig.patch.set_facecolor('#1c1c1c')
-fig.suptitle('Concept Activation Distributions (present vs absent)', color='white')
+fig.suptitle('Concept Activation Distributions (present vs absent)')
 
 for idx, (ax, name) in enumerate(zip(axes.flat, OBS_NAMES)):
-    ax.set_facecolor('#1c1c1c')
     mask_present = labels_obs[:, idx] == 1
     mask_absent  = labels_obs[:, idx] == 0
     vals_present = act_matrix[mask_present, idx]
@@ -306,18 +299,17 @@ for idx, (ax, name) in enumerate(zip(axes.flat, OBS_NAMES)):
         pc.set_alpha(0.6 if i_v == 1 else 0.3)
     for key in ('cmeans', 'cmedians', 'cbars', 'cmins', 'cmaxes'):
         if key in parts:
-            parts[key].set_color('white')
+            parts[key].set_color('black')
 
     ax.set_xticks([0, 1])
-    ax.set_xticklabels(['absent', 'present'], color='white', fontsize=9)
-    ax.set_ylabel('Activation', color='white')
+    ax.set_xticklabels(['absent', 'present'], fontsize=9)
+    ax.set_ylabel('Activation')
     ax.set_title(f'{name}', color=CLASS_COLORS[idx], fontsize=10)
-    ax.tick_params(colors='white')
     for sp in ax.spines.values():
-        sp.set_edgecolor('#444444')
+        sp.set_edgecolor('#cccccc')
 
 plt.tight_layout()
-plt.savefig('eval_plots/concept_activation_distributions.png', dpi=130, facecolor='#1c1c1c')
+plt.savefig('eval_plots/concept_activation_distributions.png', dpi=130)
 plt.close(fig)
 print('    → eval_plots/concept_activation_distributions.png')
 
@@ -393,29 +385,93 @@ angles += angles[:1]
 vals    = radar_values + radar_values[:1]
 
 fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-fig.patch.set_facecolor('#1c1c1c')
-ax.set_facecolor('#1c1c1c')
 
 ax.plot(angles, vals, color='#4ECDC4', linewidth=2)
 ax.fill(angles, vals, color='#4ECDC4', alpha=0.25)
 ax.set_xticks(angles[:-1])
-ax.set_xticklabels(radar_labels, color='white', fontsize=9)
+ax.set_xticklabels(radar_labels, fontsize=9)
 ax.set_ylim(0, 1)
 ax.set_yticks([0.25, 0.5, 0.75, 1.0])
-ax.set_yticklabels(['0.25', '0.5', '0.75', '1.0'], color='#aaaaaa', fontsize=7)
-ax.tick_params(colors='white')
-ax.spines['polar'].set_color('#444444')
-ax.grid(color='#444444', linestyle='--', alpha=0.5)
-ax.set_title('Evaluation Summary', color='white', fontsize=12, pad=20)
+ax.set_yticklabels(['0.25', '0.5', '0.75', '1.0'], color='#666666', fontsize=7)
+ax.spines['polar'].set_color('#cccccc')
+ax.grid(color='#dddddd', linestyle='--', alpha=0.5)
+ax.set_title('Evaluation Summary', fontsize=12, pad=20)
 
 for angle, val, lbl in zip(angles[:-1], radar_values, radar_labels):
     ax.text(angle, val + 0.07, f'{val:.2f}', ha='center', va='center',
-            color='white', fontsize=8)
+            fontsize=8)
 
 plt.tight_layout()
-plt.savefig('eval_plots/evaluation_summary.png', dpi=130, facecolor='#1c1c1c')
+plt.savefig('eval_plots/evaluation_summary.png', dpi=130)
 plt.close(fig)
 print('    → eval_plots/evaluation_summary.png')
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DAG STRUCTURE DIAGRAM
+# ══════════════════════════════════════════════════════════════════════════════
+# Topological layers: latent roots → observable intermediates → observable sinks
+# dent and scratch cause other observable nodes, so they sit in the middle row
+_dag_nodes = {
+    # idx: (label, x, y)
+    4: ('impact_force',  0.20, 0.82),
+    5: ('metal_fatigue', 0.50, 0.82),
+    6: ('corrosion',     0.80, 0.82),
+    1: ('dent',          0.35, 0.50),
+    3: ('scratch',       0.65, 0.50),
+    0: ('crack',         0.35, 0.18),
+    2: ('paint_off',     0.65, 0.18),
+}
+_dag_edges = [
+    (4, 1), (4, 3), (4, 0),
+    (5, 0),
+    (6, 2),
+    (1, 0), (1, 3),
+    (3, 2),
+]
+
+fig, ax = plt.subplots(figsize=(7, 8))
+ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.axis('off')
+
+# Row labels on the right
+ax.text(0.97, 0.82, 'latent\nroot causes',     color='#888888', fontsize=7,
+        va='center', ha='right', transform=ax.transAxes)
+ax.text(0.97, 0.50, 'observable\n(intermediate)', color='#888888', fontsize=7,
+        va='center', ha='right', transform=ax.transAxes)
+ax.text(0.97, 0.18, 'observable\n(sink)',         color='#888888', fontsize=7,
+        va='center', ha='right', transform=ax.transAxes)
+
+for src_i, dst_i in _dag_edges:
+    sx, sy = _dag_nodes[src_i][1], _dag_nodes[src_i][2]
+    dx, dy = _dag_nodes[dst_i][1], _dag_nodes[dst_i][2]
+    rad = 0.35 if abs(sy - dy) < 0.05 else 0.0
+    ax.annotate('', xy=(dx, dy), xytext=(sx, sy),
+                arrowprops=dict(arrowstyle='-|>', color='#555555',
+                                lw=1.5, mutation_scale=14,
+                                connectionstyle=f'arc3,rad={rad}'))
+
+for idx, (name, x, y) in _dag_nodes.items():
+    if idx < N_OBSERVABLE:
+        color = CLASS_COLORS[idx]
+        ax.scatter([x], [y], s=2400, color=color, zorder=3,
+                   edgecolors='black', linewidths=1.0)
+        ax.text(x, y, name.replace('_', '\n'), ha='center', va='center',
+                color='white', fontsize=7.5, fontweight='bold', zorder=4)
+    else:
+        lc = LATENT_COLORS[idx - N_OBSERVABLE]
+        ax.scatter([x], [y], s=2400, color=lc, zorder=3, marker='D',
+                   edgecolors='black', linewidths=1.0)
+        ax.text(x, y, name.replace('_', '\n'), ha='center', va='center',
+                color='white', fontsize=7, fontweight='bold', zorder=4)
+
+ax.text(0.25, 0.04, '● observable concept', color='black', fontsize=8, transform=ax.transAxes)
+ax.text(0.58, 0.04, '◆ latent root cause',  color='black', fontsize=8, transform=ax.transAxes)
+ax.set_title('Aircraft Damage Causal DAG', fontsize=12, pad=10)
+
+plt.tight_layout()
+plt.savefig('eval_plots/dag_structure.png', dpi=130, bbox_inches='tight')
+plt.close(fig)
+print('    → eval_plots/dag_structure.png')
 
 
 # ══════════════════════════════════════════════════════════════════════════════

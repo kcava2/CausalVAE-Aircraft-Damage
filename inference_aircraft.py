@@ -38,7 +38,7 @@ LATENT_NAMES = CLASS_NAMES[N_OBSERVABLE:]  # impact_force, metal_fatigue, corros
 
 OBS_COLORS    = ['#DC3232', '#FFA500', '#32B432', '#508CFF']
 LATENT_COLORS = ['#FF6B6B', '#4ECDC4', '#95E1D3']
-BG            = '#1c1c1c'
+BG            = 'white'
 
 _MAINTENANCE = {
     'impact_force':  'Inspect for structural deformation. Check adjacent panels.',
@@ -350,7 +350,7 @@ def _prob_bars(ax, probs, ref_probs=None, show_delta=False):
     for i, p in enumerate(probs):
         y = _N_OBS - 1 - i
         ax.barh(y, float(p), height=0.55, color=OBS_COLORS[i])
-        ax.text(-0.02, y, OBS_NAMES[i][:7], color='white',
+        ax.text(-0.02, y, OBS_NAMES[i][:7], color='black',
                 va='center', ha='right', fontsize=6)
         if show_delta and ref_probs is not None:
             delta = float(p) - float(ref_probs[i])
@@ -359,7 +359,7 @@ def _prob_bars(ax, probs, ref_probs=None, show_delta=False):
             ax.text(float(p) + 0.03, y, f'{sign}{delta:.2f}', color=dc,
                     va='center', fontsize=6)
         else:
-            ax.text(float(p) + 0.03, y, f'{p*100:.0f}%', color='white',
+            ax.text(float(p) + 0.03, y, f'{p*100:.0f}%', color='black',
                     va='center', fontsize=6)
 
 
@@ -397,27 +397,27 @@ def make_dag_figure(stem, dag_w, probs, sev_count, save_path):
 
     for name, x, y, idx in obs_nodes:
         detected = bool(probs[idx] >= args.threshold)
-        color    = OBS_COLORS[idx] if detected else '#555555'
+        color    = OBS_COLORS[idx] if detected else '#aaaaaa'
         ax.scatter([x], [y], s=1200, color=color, zorder=3,
-                   edgecolors='white', linewidths=1.2)
+                   edgecolors='black', linewidths=1.2)
         ax.text(x, y, name.replace('_', '\n'), ha='center', va='center',
                 color='white', fontsize=6.5, fontweight='bold', zorder=4)
 
     for name, x, y, idx in latent_nodes:
         lc = LATENT_COLORS[idx - N_OBSERVABLE]
         ax.scatter([x], [y], s=1200, color=lc, zorder=3, marker='D',
-                   edgecolors='white', linewidths=1.2)
+                   edgecolors='black', linewidths=1.2)
         ax.text(x, y, name.replace('_', '\n'), ha='center', va='center',
                 color='white', fontsize=5.5, fontweight='bold', zorder=4)
 
-    ax.text(0.02, 0.04, '● observable', color='white', fontsize=7,
+    ax.text(0.02, 0.04, '● observable', color='black', fontsize=7,
             transform=ax.transAxes)
-    ax.text(0.18, 0.04, '◆ latent root cause', color='white', fontsize=7,
+    ax.text(0.18, 0.04, '◆ latent root cause', color='black', fontsize=7,
             transform=ax.transAxes)
-    ax.set_title(f'Causal Structure — {stem}', color='white', fontsize=11, pad=10)
+    ax.set_title(f'Causal Structure — {stem}', fontsize=11, pad=10)
     ax.text(0.5, 0.04,
             f'Severity: {severity_label(sev_count)}',
-            ha='center', color='#cccccc', fontsize=9, transform=ax.transAxes)
+            ha='center', color='#555555', fontsize=9, transform=ax.transAxes)
 
     plt.savefig(save_path, dpi=130, facecolor=BG, bbox_inches='tight')
     plt.close(fig)
@@ -426,35 +426,35 @@ def make_dag_figure(stem, dag_w, probs, sev_count, save_path):
 def make_analysis_figure(stem, orig_img, recon_img, probs, root_causes,
                           dominant_cause, notes, sev_count, save_path):
     fig = plt.figure(figsize=(12, 7), facecolor=BG)
-    fig.suptitle(f'Damage Analysis — {stem}', color='white', fontsize=10)
+    fig.suptitle(f'Damage Analysis — {stem}', fontsize=10)
     gs = fig.add_gridspec(2, 4, height_ratios=[3, 2],
                           hspace=0.15, wspace=0.25,
                           left=0.04, right=0.98, top=0.90, bottom=0.03)
 
     ax = fig.add_subplot(gs[0, 0])
-    ax.imshow(to_display(orig_img[0])); ax.set_title('Original', color='white', fontsize=9, pad=3)
+    ax.imshow(to_display(orig_img[0])); ax.set_title('Original', fontsize=9, pad=3)
     ax.axis('off')
 
     ax = fig.add_subplot(gs[0, 1])
-    ax.imshow(to_display(recon_img[0])); ax.set_title('Reconstruction', color='white', fontsize=9, pad=3)
+    ax.imshow(to_display(recon_img[0])); ax.set_title('Reconstruction', fontsize=9, pad=3)
     ax.axis('off')
 
     ax = fig.add_subplot(gs[0, 2])
     _prob_bars(ax, probs)
-    ax.set_title('Damage Probabilities', color='white', fontsize=9, pad=3)
+    ax.set_title('Damage Probabilities', fontsize=9, pad=3)
 
     # Root cause panel
     ax = fig.add_subplot(gs[0, 3])
     ax.set_facecolor(BG); ax.axis('off')
-    ax.set_title('Root Causes', color='white', fontsize=9, pad=3)
+    ax.set_title('Root Causes', fontsize=9, pad=3)
     for i, (name, val) in enumerate(root_causes.items()):
         lc = LATENT_COLORS[i]
         bar_w = max(val, 0.01)
         ax.barh(2 - i, bar_w, height=0.5, color=lc, left=0)
         ax.text(bar_w + 0.02, 2 - i, f'{val:.2f}',
-                color='white', va='center', fontsize=7)
+                color='black', va='center', fontsize=7)
         ax.text(-0.02, 2 - i, name.replace('_', '\n'),
-                color='white', va='center', ha='right', fontsize=5.5)
+                color='black', va='center', ha='right', fontsize=5.5)
     ax.set_xlim(0, 1.3); ax.set_ylim(-0.5, 2.5)
     ax.set_xticks([]); ax.set_yticks([])
     for sp in ax.spines.values():
@@ -466,7 +466,7 @@ def make_analysis_figure(stem, orig_img, recon_img, probs, root_causes,
         marker = '●' if p >= args.threshold else '○'
         ax.text(0.05, 0.85 - i * 0.22, f'{marker} {name}: {p*100:.1f}%',
                 color=OBS_COLORS[i], fontsize=9, transform=ax.transAxes)
-    ax.set_title('Detections', color='white', fontsize=9)
+    ax.set_title('Detections', fontsize=9)
 
     ax = fig.add_subplot(gs[1, 1:3])
     ax.set_facecolor(BG); ax.axis('off')
@@ -474,22 +474,22 @@ def make_analysis_figure(stem, orig_img, recon_img, probs, root_causes,
     note_str = '\n'.join(notes[:5])
     ax.text(0.02, 0.95,
             f'Severity: {sev_str}\n\nCausal Notes:\n{note_str}',
-            color='#cccccc', fontsize=7, va='top',
+            color='#444444', fontsize=7, va='top',
             transform=ax.transAxes, wrap=True)
 
     ax = fig.add_subplot(gs[1, 3])
     ax.set_facecolor(BG); ax.axis('off')
     dc_color = LATENT_COLORS[list(root_causes.keys()).index(dominant_cause)]
-    ax.text(0.05, 0.90, f'Dominant cause:', color='#aaaaaa', fontsize=7,
+    ax.text(0.05, 0.90, f'Dominant cause:', color='#666666', fontsize=7,
             transform=ax.transAxes)
     ax.text(0.05, 0.72, dominant_cause.replace('_', '\n'),
             color=dc_color, fontsize=9, fontweight='bold', transform=ax.transAxes)
     rec = _MAINTENANCE[dominant_cause]
-    ax.text(0.05, 0.45, 'Recommendation:', color='#aaaaaa', fontsize=6,
+    ax.text(0.05, 0.45, 'Recommendation:', color='#666666', fontsize=6,
             transform=ax.transAxes)
-    ax.text(0.05, 0.05, rec, color='white', fontsize=5.5, va='bottom',
+    ax.text(0.05, 0.05, rec, color='black', fontsize=5.5, va='bottom',
             transform=ax.transAxes, wrap=True)
-    ax.set_title('Maintenance', color='white', fontsize=9)
+    ax.set_title('Maintenance', fontsize=9)
 
     plt.savefig(save_path, dpi=130, facecolor=BG, bbox_inches='tight')
     plt.close(fig)
@@ -513,7 +513,7 @@ def make_causal_figure(stem, orig_img, cf_imgs, heatmaps, cf_probs,
     ]
 
     fig = plt.figure(figsize=(N * 2.4, 9.5), facecolor=BG)
-    fig.suptitle(f'Causal Analysis — {stem}', color='white', fontsize=10)
+    fig.suptitle(f'Causal Analysis — {stem}', fontsize=10)
     gs = fig.add_gridspec(3, N, height_ratios=[3, 3, 2],
                           hspace=0.18, wspace=0.12,
                           left=0.04, right=0.99, top=0.93, bottom=0.02)
@@ -523,37 +523,37 @@ def make_causal_figure(stem, orig_img, cf_imgs, heatmaps, cf_probs,
         ax.set_facecolor(BG)
         if c == 0:
             ax.imshow(to_display(orig_img[0]))
-            ax.set_title('original', color='white', fontsize=8, pad=3)
+            ax.set_title('original', fontsize=8, pad=3)
         else:
             ax.imshow(to_display(cf_imgs[c - 1][0]))
-            ax.set_title(col_titles[c], color='white', fontsize=8, pad=3)
+            ax.set_title(col_titles[c], fontsize=8, pad=3)
         ax.axis('off')
         if c == 0:
-            ax.set_ylabel(row_labels[0], color='#aaaaaa', fontsize=7)
+            ax.set_ylabel(row_labels[0], color='#666666', fontsize=7)
 
     for c in range(N):
         ax = fig.add_subplot(gs[1, c])
         ax.set_facecolor(BG)
         if c == 0:
             ax.imshow(to_display(orig_img[0]))
-            ax.set_title('original', color='white', fontsize=8, pad=3)
+            ax.set_title('original', fontsize=8, pad=3)
         else:
             ax.imshow(heatmaps[c - 1])
-            ax.set_title(f'{OBS_NAMES[c-1]} attr.', color='white', fontsize=8, pad=3)
+            ax.set_title(f'{OBS_NAMES[c-1]} attr.', fontsize=8, pad=3)
         ax.axis('off')
         if c == 0:
-            ax.set_ylabel(row_labels[1], color='#aaaaaa', fontsize=7)
+            ax.set_ylabel(row_labels[1], color='#666666', fontsize=7)
 
     for c in range(N):
         ax = fig.add_subplot(gs[2, c])
         if c == 0:
             _prob_bars(ax, ref_probs)
-            ax.set_title('baseline', color='white', fontsize=8, pad=3)
+            ax.set_title('baseline', fontsize=8, pad=3)
         else:
             _prob_bars(ax, cf_probs[c - 1], ref_probs=ref_probs, show_delta=True)
-            ax.set_title(f'do({OBS_NAMES[c-1]}=0)', color='white', fontsize=8, pad=3)
+            ax.set_title(f'do({OBS_NAMES[c-1]}=0)', fontsize=8, pad=3)
         if c == 0:
-            ax.set_ylabel(row_labels[2], color='#aaaaaa', fontsize=7)
+            ax.set_ylabel(row_labels[2], color='#666666', fontsize=7)
 
     plt.savefig(save_path, dpi=130, facecolor=BG, bbox_inches='tight')
     plt.close(fig)

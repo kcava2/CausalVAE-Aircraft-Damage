@@ -1,56 +1,57 @@
 {
   "image": "causal_data\\aircraft damage\\test\\images\\186_3_JPG_jpg.rf.6332c600f2eede60fbfbec7b260a2c4d.jpg",
   "probabilities": {
-    "crack": 0.20092500746250153,
-    "dent": 0.9884616136550903,
-    "paint_off": 0.00048462956328876317,
-    "scratch": 0.0004159229574725032
+    "crack": 0.9769400358200073,
+    "dent": 0.9394698739051819,
+    "paint_off": 8.509192639394314e-07,
+    "scratch": 1.2289653739117057e-08
   },
   "predictions": {
-    "crack": false,
+    "crack": true,
     "dent": true,
     "paint_off": false,
     "scratch": false
   },
   "damage_severity": {
-    "count": 2,
-    "label": "Minor \u2014 2 damage instance(s)"
+    "count": 3,
+    "label": "Moderate \u2014 3 damage instances"
   },
   "latent_root_causes": {
-    "impact_force": 0.6364080309867859,
-    "metal_fatigue": 0.5431912541389465,
-    "corrosion": 0.44768112897872925
+    "impact_force": 0.6009935736656189,
+    "metal_fatigue": 0.607914388179779,
+    "corrosion": 0.4820014238357544
   },
-  "dominant_cause": "impact_force",
-  "maintenance_recommendation": "Inspect for structural deformation. Check adjacent panels.",
+  "dominant_cause": "metal_fatigue",
+  "maintenance_recommendation": "Systemic issue. Review load cycle history. Inspect adjacent structure.",
   "causal_notes": [
-    "  DAG edge dent \u2192 crack: weight=0.995",
-    "  DAG edge dent \u2192 scratch: weight=1.029"
+    "dent \u2192 crack  (causal chain confirmed by DAG)",
+    "  DAG edge dent \u2192 crack: weight=0.895",
+    "  DAG edge dent \u2192 scratch: weight=0.916"
   ],
   "counterfactual_deltas": {
     "crack": {
-      "crack": -0.19204971194267273,
-      "dent": 0.0029224157333374023,
-      "paint_off": 0.0020355861634016037,
-      "scratch": 0.023469604551792145
+      "crack": -0.9769251942634583,
+      "dent": 0.06047719717025757,
+      "paint_off": 0.0003027039347216487,
+      "scratch": 0.00024828125606290996
     },
     "dent": {
-      "crack": 0.003650084137916565,
-      "dent": -0.8992811441421509,
-      "paint_off": 0.2858108580112457,
-      "scratch": 0.010270724073052406
+      "crack": 0.022781312465667725,
+      "dent": -0.9394210577011108,
+      "paint_off": 0.007355894893407822,
+      "scratch": 4.891642788606987e-07
     },
     "paint_off": {
-      "crack": -0.010500133037567139,
-      "dent": 0.0015739798545837402,
-      "paint_off": -9.669901919551194e-05,
-      "scratch": -6.509124068543315e-05
+      "crack": -0.001689910888671875,
+      "dent": 0.008862853050231934,
+      "paint_off": -1.477740738664579e-07,
+      "scratch": -1.924410852893743e-09
     },
     "scratch": {
-      "crack": -0.021279484033584595,
-      "dent": 0.0016508698463439941,
-      "paint_off": -0.00018175694276578724,
-      "scratch": -0.00020552471687551588
+      "crack": -0.0008949041366577148,
+      "dent": -0.012061834335327148,
+      "paint_off": 4.5600916109833634e-07,
+      "scratch": 1.4305182816087836e-08
     }
   },
   "causal_indicators": [
@@ -64,7 +65,7 @@
     {
       "dent": {
         "crack": "no_change",
-        "paint_off": "inverse_relationship",
+        "paint_off": "no_change",
         "scratch": "no_change"
       }
     },
@@ -84,24 +85,25 @@
     }
   ],
   "dag_weights": {
-    "dent_to_crack": 0.9952928423881531,
-    "dent_to_paint_off": -0.05225648358464241,
-    "dent_to_scratch": 1.0289784669876099,
-    "dent_to_metal_fatigue": -0.07796081155538559,
-    "paint_off_to_metal_fatigue": -0.08882009238004684,
-    "scratch_to_paint_off": 0.9540008902549744,
-    "scratch_to_metal_fatigue": -0.06311602890491486,
-    "impact_force_to_crack": 0.9323389530181885,
-    "impact_force_to_dent": 1.1591368913650513,
-    "impact_force_to_paint_off": -0.06614658236503601,
-    "impact_force_to_scratch": 1.0029386281967163,
-    "impact_force_to_metal_fatigue": -0.08443176746368408,
-    "metal_fatigue_to_crack": 1.1262366771697998,
-    "metal_fatigue_to_dent": -0.05809112265706062,
-    "metal_fatigue_to_paint_off": 0.08060482144355774,
-    "metal_fatigue_to_impact_force": -0.12378930300474167,
-    "corrosion_to_dent": -0.06398434191942215,
-    "corrosion_to_paint_off": 1.0996499061584473,
-    "corrosion_to_scratch": -0.10036305338144302
+    "crack_to_paint_off": 0.11096818745136261,
+    "crack_to_scratch": 0.12869703769683838,
+    "dent_to_crack": 0.8945893049240112,
+    "dent_to_paint_off": -0.21144774556159973,
+    "dent_to_scratch": 0.9155275225639343,
+    "dent_to_metal_fatigue": -0.18893718719482422,
+    "scratch_to_paint_off": 0.9978505373001099,
+    "scratch_to_metal_fatigue": -0.05001747980713844,
+    "impact_force_to_crack": 0.9473732113838196,
+    "impact_force_to_dent": 1.0651816129684448,
+    "impact_force_to_scratch": 1.0149060487747192,
+    "impact_force_to_metal_fatigue": 0.06906158477067947,
+    "metal_fatigue_to_crack": 1.1846716403961182,
+    "metal_fatigue_to_paint_off": 0.21420758962631226,
+    "metal_fatigue_to_scratch": 0.08079981803894043,
+    "metal_fatigue_to_impact_force": -0.07830844819545746,
+    "corrosion_to_crack": -0.11046148836612701,
+    "corrosion_to_paint_off": 1.1744012832641602,
+    "corrosion_to_scratch": 0.05841922014951706,
+    "corrosion_to_impact_force": -0.06143669784069061
   }
 }
